@@ -177,12 +177,14 @@
                     <div class="mt-6 p-4 bg-blue-50 rounded-xl">
                         <h3 class="font-semibold text-primary text-sm mb-3">今日状态</h3>
                         <div class="space-y-2 text-xs">
-                            <div class="flex justify-between"><span class="text-gray-600">起床打卡</span><span id="status-morning" class="font-medium text-gray-800">-</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600">上班打卡</span><span id="status-work-start" class="font-medium text-gray-800">-</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600">下班打卡</span><span id="status-work-end" class="font-medium text-gray-800">-</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600">专注时长</span><span id="status-focus" class="font-medium text-primary">-</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600">运动</span><span id="status-exercise" class="font-medium text-gray-800">-</span></div>
-                            <div class="flex justify-between"><span class="text-gray-600">休息</span><span id="status-rest" class="font-medium text-success">否</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">☀️ 起床</span><span id="status-morning" class="font-medium text-gray-800">-</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">🌤️ 第一段</span><span id="status-session-0" class="font-medium text-gray-800">-</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">🌙 第二段</span><span id="status-session-1" class="font-medium text-gray-800">-</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">🌑 第三段</span><span id="status-session-2" class="font-medium text-gray-800">-</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">💪 专注</span><span id="status-focus" class="font-medium text-primary">-</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">🐟 摸鱼</span><span id="status-slacking" class="font-medium text-warning">-</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">🏃 运动</span><span id="status-exercise" class="font-medium text-gray-800">-</span></div>
+                            <div class="flex justify-between"><span class="text-gray-600">😴 休息</span><span id="status-rest" class="font-medium text-success">否</span></div>
                         </div>
                     </div>
                 </div>
@@ -194,70 +196,116 @@
                 <!-- ========== 打卡模块 ========== -->
                 <section id="section-checkin" class="animate-fade-in">
                     <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-                        <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                            <i class="fa fa-clock-o mr-2 text-primary"></i>打卡记录
+                        <h2 class="text-xl font-bold text-gray-800 mb-2 flex items-center">
+                            <i class="fa fa-clock-o mr-2 text-primary"></i>今日工作记录
                         </h2>
+                        <p class="text-xs text-gray-400 mb-6" id="checkin-date-label">2026年4月7日</p>
 
-                        <!-- 打卡卡片 -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <!-- 起床打卡 -->
-                            <div class="bg-blue-50 rounded-xl p-4">
-                                <h3 class="text-base font-semibold text-primary mb-1">☀️ 起床打卡</h3>
-                                <p class="text-xs text-gray-500 mb-3">记录今天几点起的</p>
-                                <div class="text-center">
-                                    <p class="text-2xl font-bold text-primary mb-1" id="morning-time">-</p>
-                                    <p class="text-xs text-gray-500 mb-3" id="morning-status-text">未打卡</p>
-                                    <button id="btn-morning" onclick="doMorningCheckin()" class="w-full bg-primary text-white py-2.5 rounded-lg font-medium btn-shadow transition-all text-sm hover:bg-primary/90">
-                                        起床打卡
-                                    </button>
-                                </div>
+                        <!-- 汇总状态栏 -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                            <div class="bg-blue-50 rounded-xl p-3 text-center">
+                                <p class="text-xs text-gray-500 mb-1">☀️ 起床</p>
+                                <p class="text-lg font-bold text-primary" id="sum-wakeup">-</p>
                             </div>
-
-                            <!-- 上班打卡 -->
-                            <div class="bg-green-50 rounded-xl p-4">
-                                <h3 class="text-base font-semibold text-success mb-1">💼 上班打卡</h3>
-                                <p class="text-xs text-gray-500 mb-3">开始工作（通常14:00）</p>
-                                <div class="text-center">
-                                    <p class="text-2xl font-bold text-success mb-1" id="work-start-time">-</p>
-                                    <p class="text-xs text-gray-500 mb-3" id="work-start-status-text">未打卡</p>
-                                    <button id="btn-work-start" onclick="doWorkStart()" class="w-full bg-success text-white py-2.5 rounded-lg font-medium btn-shadow-green transition-all text-sm hover:bg-success/90">
-                                        上班打卡
-                                    </button>
-                                </div>
+                            <div class="bg-green-50 rounded-xl p-3 text-center">
+                                <p class="text-xs text-gray-500 mb-1">💪 专注时长</p>
+                                <p class="text-lg font-bold text-success" id="sum-focus">-</p>
                             </div>
-
-                            <!-- 下班打卡 -->
-                            <div class="bg-orange-50 rounded-xl p-4">
-                                <h3 class="text-base font-semibold text-warning mb-1">🌙 下班打卡</h3>
-                                <p class="text-xs text-gray-500 mb-3">收工（凌晨4-5点）</p>
-                                <div class="text-center">
-                                    <p class="text-2xl font-bold text-warning mb-1" id="work-end-time">-</p>
-                                    <p class="text-xs text-gray-500 mb-3" id="work-end-status-text">未打卡</p>
-                                    <p class="text-xs text-gray-400 mb-3" id="focus-duration-text"></p>
-                                    <button id="btn-work-end" onclick="doWorkEnd()" class="w-full bg-warning text-white py-2.5 rounded-lg font-medium btn-shadow-orange transition-all text-sm hover:bg-warning/90" disabled>
-                                        下班打卡
-                                    </button>
-                                </div>
+                            <div class="bg-orange-50 rounded-xl p-3 text-center">
+                                <p class="text-xs text-gray-500 mb-1">🐟 摸鱼时长</p>
+                                <p class="text-lg font-bold text-warning" id="sum-slacking">-</p>
+                            </div>
+                            <div class="bg-purple-50 rounded-xl p-3 text-center">
+                                <p class="text-xs text-gray-500 mb-1">📅 工作段数</p>
+                                <p class="text-lg font-bold text-purple-600" id="sum-sessions">0/3</p>
                             </div>
                         </div>
 
-                        <!-- 今日记录表 -->
-                        <h3 class="text-base font-semibold text-gray-700 mb-3">今日打卡记录</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="bg-gray-50">
-                                        <th class="py-2 px-4 text-left text-xs font-medium text-gray-500">项目</th>
-                                        <th class="py-2 px-4 text-left text-xs font-medium text-gray-500">时间</th>
-                                        <th class="py-2 px-4 text-left text-xs font-medium text-gray-500">状态</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100" id="today-checkin-table">
-                                    <tr><td class="py-2 px-4 text-gray-600">☀️ 起床</td><td id="t-morning" class="px-4 font-medium">-</td><td id="s-morning" class="px-4 text-gray-400">-</td></tr>
-                                    <tr><td class="py-2 px-4 text-gray-600">💼 上班</td><td id="t-work-start" class="px-4 font-medium">-</td><td id="s-work-start" class="px-4 text-gray-400">-</td></tr>
-                                    <tr><td class="py-2 px-4 text-gray-600">🌙 下班</td><td id="t-work-end" class="px-4 font-medium">-</td><td id="s-work-end" class="px-4 text-gray-400">-</td></tr>
-                                </tbody>
-                            </table>
+                        <!-- 三段工作 + 摸鱼按钮 -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <!-- 第一段：下午段 -->
+                            <div class="bg-blue-50 rounded-xl p-4 border-2 border-transparent session-card" id="card-session-0">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-base font-semibold text-primary">🌤️ 第一段</h3>
+                                    <span class="text-xs text-gray-400" id="label-session-0">下午 14:00</span>
+                                </div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <p class="text-2xl font-bold text-primary" id="time-session-0-start">-</p>
+                                        <p class="text-xs text-gray-400" id="time-session-0-end">开始时间</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-lg font-bold text-success" id="dur-session-0">-</p>
+                                        <p class="text-xs text-gray-400">本次专注</p>
+                                    </div>
+                                </div>
+                                <button id="btn-session-0" onclick="toggleSession(0)" class="w-full bg-primary text-white py-2.5 rounded-lg font-medium btn-shadow transition-all text-sm hover:bg-primary/90">
+                                    ▶ 开始工作
+                                </button>
+                            </div>
+
+                            <!-- 第二段：晚间段 -->
+                            <div class="bg-green-50 rounded-xl p-4 border-2 border-transparent session-card" id="card-session-1">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-base font-semibold text-success">🌙 第二段</h3>
+                                    <span class="text-xs text-gray-400" id="label-session-1">晚间 19:30</span>
+                                </div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <p class="text-2xl font-bold text-success" id="time-session-1-start">-</p>
+                                        <p class="text-xs text-gray-400" id="time-session-1-end">开始时间</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-lg font-bold text-success" id="dur-session-1">-</p>
+                                        <p class="text-xs text-gray-400">本次专注</p>
+                                    </div>
+                                </div>
+                                <button id="btn-session-1" onclick="toggleSession(1)" class="w-full bg-success text-white py-2.5 rounded-lg font-medium btn-shadow-green transition-all text-sm hover:bg-success/90">
+                                    ▶ 开始工作
+                                </button>
+                            </div>
+
+                            <!-- 第三段：深夜段 -->
+                            <div class="bg-orange-50 rounded-xl p-4 border-2 border-transparent session-card" id="card-session-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-base font-semibold text-warning">🌑 第三段</h3>
+                                    <span class="text-xs text-gray-400" id="label-session-2">深夜 23:00</span>
+                                </div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <p class="text-2xl font-bold text-warning" id="time-session-2-start">-</p>
+                                        <p class="text-xs text-gray-400" id="time-session-2-end">开始时间</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-lg font-bold text-success" id="dur-session-2">-</p>
+                                        <p class="text-xs text-gray-400">本次专注</p>
+                                    </div>
+                                </div>
+                                <button id="btn-session-2" onclick="toggleSession(2)" class="w-full bg-warning text-white py-2.5 rounded-lg font-medium btn-shadow-orange transition-all text-sm hover:bg-warning/90">
+                                    ▶ 开始工作
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 摸鱼记录 -->
+                        <div class="bg-red-50 rounded-xl p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-semibold text-red-600 mb-1">🐟 摸鱼记录</h3>
+                                    <p class="text-xs text-gray-400">点击开始计时，摸鱼期间专注计时暂停</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="text-right">
+                                        <p class="text-xl font-bold text-danger" id="slacking-timer">00:00</p>
+                                        <p class="text-xs text-gray-400">本次摸鱼</p>
+                                    </div>
+                                    <button id="btn-slacking" onclick="toggleSlacking()" class="bg-danger text-white px-5 py-2.5 rounded-lg font-medium hover:bg-danger/90 transition-all text-sm">
+                                        🎮 开始摸鱼
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- 今日摸鱼记录列表 -->
+                            <div id="slacking-records" class="mt-3 space-y-1"></div>
                         </div>
                     </div>
                 </section>
@@ -477,9 +525,11 @@
                                     <tr class="bg-gray-50">
                                         <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">日期</th>
                                         <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">起床</th>
-                                        <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">上班</th>
-                                        <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">下班</th>
+                                        <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">第一段</th>
+                                        <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">第二段</th>
+                                        <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">第三段</th>
                                         <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">专注</th>
+                                        <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">摸鱼</th>
                                         <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">运动</th>
                                     </tr>
                                 </thead>
@@ -509,9 +559,16 @@ const STORAGE_KEYS = {
 // ========== STATE ==========
 let pwdEntered = '';
 let focusTimer = null;
-let focusStartTime = null;
+let focusStartTime = null;   // 本session计时开始时间
+let focusElapsed = 0;        // 本session已累计的专注秒数（不含摸鱼时间）
+let focusLastPaused = 0;     // 摸鱼开始时累计的秒数
 let focusChart = null;
 let restFormType = 'full';
+let currentSession = -1;    // 当前活跃的session index，-1表示无
+let slackingTimer = null;
+let slackingStart = null;
+let slackingActive = false;
+let slackingElapsed = 0;
 
 // ========== PASSWORD SYSTEM ==========
 function pwdInput(digit) {
@@ -669,13 +726,52 @@ function initApp() {
 
 // ========== DATA ==========
 function initData() {
-    // Ensure today's checkin data exists
     const today = getTodayString();
     let checkin = loadData(STORAGE_KEYS.CHECKIN);
     if (!checkin[today]) {
-        checkin[today] = { morning: null, workStart: null, workEnd: null, focusMinutes: 0 };
+        checkin[today] = {
+            wakeup: null,
+            sessions: [
+                { start: null, end: null, focusMinutes: 0 },
+                { start: null, end: null, focusMinutes: 0 },
+                { start: null, end: null, focusMinutes: 0 }
+            ],
+            slacking: []
+        };
+    } else {
+        // 兼容旧数据：如果没有sessions字段，补上
+        if (!checkin[today].sessions) {
+            checkin[today].sessions = [
+                { start: null, end: null, focusMinutes: 0 },
+                { start: null, end: null, focusMinutes: 0 },
+                { start: null, end: null, focusMinutes: 0 }
+            ];
+        }
+        if (!checkin[today].slacking) checkin[today].slacking = [];
     }
     saveData(STORAGE_KEYS.CHECKIN, checkin);
+
+    // Resume active session timer
+    const cd = checkin[today];
+    for (let i = 0; i < 3; i++) {
+        if (cd.sessions[i].start && !cd.sessions[i].end) {
+            currentSession = i;
+            focusStartTime = new Date(`${today}T${cd.sessions[i].start}`);
+            focusElapsed = cd.sessions[i].focusMinutes * 60;
+            startFocusTimer();
+            break;
+        }
+    }
+
+    // Resume slacking timer if active
+    if (checkin[today].slacking.length > 0) {
+        const last = checkin[today].slacking[checkin[today].slacking.length - 1];
+        if (!last.end) {
+            slackingStart = new Date(`${today}T${last.start}`);
+            slackingActive = true;
+            startSlackingTimer();
+        }
+    }
 
     // Ensure today's exercise data exists
     let exercise = loadData(STORAGE_KEYS.EXERCISE);
@@ -691,13 +787,6 @@ function initData() {
     let rest = loadData(STORAGE_KEYS.REST);
     if (!rest[today]) rest[today] = null;
     saveData(STORAGE_KEYS.REST, rest);
-
-    // Resume focus timer if work is started but not ended
-    const cd = checkin[today];
-    if (cd.workStart && !cd.workEnd) {
-        focusStartTime = new Date(`${today}T${cd.workStart}`);
-        startFocusTimer();
-    }
 }
 
 function loadData(key) {
@@ -717,7 +806,10 @@ function updateDateTime() {
     const opts = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' };
     const el = document.getElementById('current-date-time');
     if (el) el.textContent = now.toLocaleDateString('zh-CN', opts);
+    const dateEl = document.getElementById('checkin-date-label');
+    if (dateEl) dateEl.textContent = now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
     if (focusStartTime) updateFocusDisplay();
+    if (slackingActive) updateSlackingDisplay();
 }
 
 // ========== NAVIGATION ==========
@@ -736,51 +828,240 @@ function doMorningCheckin() {
     const today = getTodayString();
     const time = getNowTime();
     let checkin = loadData(STORAGE_KEYS.CHECKIN);
-    checkin[today].morning = time;
+    checkin[today].wakeup = time;
     saveData(STORAGE_KEYS.CHECKIN, checkin);
-    document.getElementById('morning-time').textContent = time;
-    document.getElementById('morning-status-text').textContent = '已打卡';
-    document.getElementById('btn-morning').textContent = '已打卡';
-    document.getElementById('btn-morning').disabled = true;
-    document.getElementById('btn-morning').className = 'w-full bg-gray-300 text-gray-500 py-2.5 rounded-lg font-medium text-sm cursor-not-allowed';
-    updateCheckinTable();
-    updateTodayStatus();
+    document.getElementById('sum-wakeup').textContent = time;
+    document.getElementById('status-morning').textContent = time;
+    document.getElementById('status-morning').className = 'font-medium text-success';
 }
 
-function doWorkStart() {
+function toggleSession(idx) {
     const today = getTodayString();
     const time = getNowTime();
     let checkin = loadData(STORAGE_KEYS.CHECKIN);
-    checkin[today].workStart = time;
-    saveData(STORAGE_KEYS.CHECKIN, checkin);
-    document.getElementById('work-start-time').textContent = time;
-    document.getElementById('work-start-status-text').textContent = '已打卡';
-    document.getElementById('btn-work-start').textContent = '已打卡';
-    document.getElementById('btn-work-start').disabled = true;
-    document.getElementById('btn-work-start').className = 'w-full bg-gray-300 text-gray-500 py-2.5 rounded-lg font-medium text-sm cursor-not-allowed';
-    document.getElementById('btn-work-end').disabled = false;
-    focusStartTime = new Date(`${today}T${time}`);
-    startFocusTimer();
-    updateCheckinTable();
+    const session = checkin[today].sessions[idx];
+    const card = document.getElementById(`card-session-${idx}`);
+    const btn = document.getElementById(`btn-session-${idx}`);
+    const btnColors = ['bg-primary', 'bg-success', 'bg-warning'];
+    const hoverColors = ['bg-primary/90', 'bg-success/90', 'bg-warning/90'];
+
+    if (!session.start) {
+        // === 开始工作 ===
+        // 如果有其他session在工作中，先结束它
+        if (currentSession >= 0 && currentSession !== idx) {
+            const prev = currentSession;
+            const prevTime = getNowTime();
+            let prevCheckin = loadData(STORAGE_KEYS.CHECKIN);
+            const prevSession = prevCheckin[today].sessions[prev];
+            prevSession.end = prevTime;
+            // 减去摸鱼时间
+            if (slackingActive) {
+                const slackingSec = Math.round((new Date() - slackingStart) / 1000);
+                prevSession.focusMinutes = Math.round((focusElapsed - slackingSec) / 60);
+            } else {
+                prevSession.focusMinutes = Math.round(focusElapsed / 60);
+            }
+            saveData(STORAGE_KEYS.CHECKIN, prevCheckin);
+            stopFocusTimer();
+            focusElapsed = 0;
+            const prevBtn = document.getElementById(`btn-session-${prev}`);
+            prevBtn.textContent = '✓ 已结束';
+            prevBtn.disabled = true;
+            prevBtn.className = `w-full ${btnColors[prev]} text-white py-2.5 rounded-lg font-medium text-sm opacity-60 cursor-not-allowed`;
+            document.getElementById(`card-session-${prev}`).classList.remove('ring-2', 'ring-yellow-400');
+            document.getElementById(`time-session-${prev}-end`).textContent = prevTime;
+            document.getElementById(`dur-session-${prev}`).textContent = formatMinutes(prevSession.focusMinutes);
+            currentSession = -1;
+        }
+
+        // 开始新session
+        session.start = time;
+        checkin[today].sessions[idx] = session;
+        saveData(STORAGE_KEYS.CHECKIN, checkin);
+        currentSession = idx;
+        focusStartTime = new Date();
+        focusElapsed = 0;
+        startFocusTimer();
+
+        btn.textContent = '⏹ 结束工作';
+        btn.disabled = false;
+        card.classList.add('ring-2', 'ring-yellow-400');
+        document.getElementById(`time-session-${idx}-start`).textContent = time;
+        document.getElementById(`dur-session-${idx}`).textContent = '00:00';
+
+    } else if (!session.end) {
+        // === 结束工作 ===
+        session.end = time;
+        const totalSec = Math.round((new Date() - focusStartTime) / 1000);
+        if (slackingActive) {
+            const slackingSec = Math.round((new Date() - slackingStart) / 1000);
+            session.focusMinutes = Math.round((totalSec - slackingSec) / 60);
+        } else {
+            session.focusMinutes = Math.round(totalSec / 60);
+        }
+        checkin[today].sessions[idx] = session;
+        saveData(STORAGE_KEYS.CHECKIN, checkin);
+
+        stopFocusTimer();
+        focusElapsed = 0;
+        currentSession = -1;
+
+        btn.textContent = '✓ 已结束';
+        btn.disabled = true;
+        card.classList.remove('ring-2', 'ring-yellow-400');
+        document.getElementById(`time-session-${idx}-end`).textContent = time;
+        document.getElementById(`dur-session-${idx}`).textContent = formatMinutes(session.focusMinutes);
+    }
+
+    updateSessionButtons();
+    updateTodayStatus();
+    updateSummaryBar();
+}
+
+function toggleSlacking() {
+    const today = getTodayString();
+    const time = getNowTime();
+
+    if (!slackingActive) {
+        // === 开始摸鱼 ===
+        if (focusStartTime && currentSession >= 0) {
+            focusLastPaused = focusElapsed;
+        }
+
+        let checkin = loadData(STORAGE_KEYS.CHECKIN);
+        checkin[today].slacking.push({ start: time, end: null, minutes: 0 });
+        saveData(STORAGE_KEYS.CHECKIN, checkin);
+
+        slackingStart = new Date();
+        slackingActive = true;
+        startSlackingTimer();
+
+        document.getElementById('btn-slacking').textContent = '⏸ 结束摸鱼';
+        document.getElementById('btn-slacking').className = 'bg-gray-400 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-500 transition-all text-sm';
+
+        // 暂停专注计时
+        if (focusTimer) { clearInterval(focusTimer); focusTimer = null; }
+    } else {
+        // === 结束摸鱼 ===
+        let checkin = loadData(STORAGE_KEYS.CHECKIN);
+        const slackingSec = Math.round((new Date() - slackingStart) / 1000);
+        const last = checkin[today].slacking[checkin[today].slacking.length - 1];
+        last.end = time;
+        last.minutes = Math.round(slackingSec / 60);
+        saveData(STORAGE_KEYS.CHECKIN, checkin);
+
+        slackingActive = false;
+        stopSlackingTimer();
+
+        document.getElementById('btn-slacking').textContent = '🎮 开始摸鱼';
+        document.getElementById('btn-slacking').className = 'bg-danger text-white px-5 py-2.5 rounded-lg font-medium hover:bg-danger/90 transition-all text-sm';
+        document.getElementById('slacking-timer').textContent = '00:00';
+        slackingElapsed = 0;
+
+        // 恢复专注计时
+        if (currentSession >= 0) {
+            focusStartTime = new Date();
+            startFocusTimer();
+        }
+
+        renderSlackingRecords();
+    }
+    updateSummaryBar();
     updateTodayStatus();
 }
 
-function doWorkEnd() {
+function startSlackingTimer() {
+    if (slackingTimer) clearInterval(slackingTimer);
+    slackingTimer = setInterval(() => {
+        if (slackingStart) {
+            const sec = Math.round((new Date() - slackingStart) / 1000);
+            document.getElementById('slacking-timer').textContent = formatSeconds(sec);
+            slackingElapsed = sec;
+        }
+    }, 1000);
+}
+
+function stopSlackingTimer() {
+    if (slackingTimer) { clearInterval(slackingTimer); slackingTimer = null; }
+    slackingStart = null;
+}
+
+function renderSlackingRecords() {
     const today = getTodayString();
-    const time = getNowTime();
-    let checkin = loadData(STORAGE_KEYS.CHECKIN);
-    checkin[today].workEnd = time;
-    const minutes = Math.round((new Date() - focusStartTime) / 60000);
-    checkin[today].focusMinutes += minutes;
-    saveData(STORAGE_KEYS.CHECKIN, checkin);
-    stopFocusTimer();
-    document.getElementById('work-end-time').textContent = time;
-    document.getElementById('work-end-status-text').textContent = '已打卡';
-    document.getElementById('btn-work-end').textContent = '已打卡';
-    document.getElementById('btn-work-end').disabled = true;
-    document.getElementById('btn-work-end').className = 'w-full bg-gray-300 text-gray-500 py-2.5 rounded-lg font-medium text-sm cursor-not-allowed';
-    updateCheckinTable();
-    updateTodayStatus();
+    const checkin = loadData(STORAGE_KEYS.CHECKIN)[today];
+    const container = document.getElementById('slacking-records');
+    if (!container) return;
+
+    const records = checkin.slacking.filter(r => r.start);
+    if (records.length === 0) { container.innerHTML = ''; return; }
+
+    container.innerHTML = records.map(r => {
+        const endStr = r.end || '进行中';
+        return `<div class="flex items-center justify-between text-xs py-1 border-b border-red-100 last:border-0">
+            <span class="text-gray-500">${r.start} → ${endStr}</span>
+            <span class="text-danger font-medium">${r.minutes}分钟</span>
+        </div>`;
+    }).join('');
+}
+
+function updateSessionButtons() {
+    const today = getTodayString();
+    const checkin = loadData(STORAGE_KEYS.CHECKIN)[today];
+    let activeCount = 0;
+    const btnColors = ['bg-primary', 'bg-success', 'bg-warning'];
+
+    for (let i = 0; i < 3; i++) {
+        const s = checkin.sessions[i];
+        const btn = document.getElementById(`btn-session-${i}`);
+        const card = document.getElementById(`card-session-${i}`);
+        if (!s) continue;
+
+        if (s.start && s.end) {
+            activeCount++;
+            if (currentSession !== i) {
+                btn.textContent = '✓ 已结束';
+                btn.disabled = true;
+                btn.className = `w-full ${btnColors[i]} text-white py-2.5 rounded-lg font-medium text-sm opacity-60 cursor-not-allowed`;
+                card.classList.remove('ring-2', 'ring-yellow-400');
+            }
+        } else if (s.start) {
+            activeCount++;
+        } else {
+            if (currentSession < 0) {
+                btn.disabled = false;
+                btn.className = `w-full ${btnColors[i]} text-white py-2.5 rounded-lg font-medium btn-shadow transition-all text-sm hover:${btnColors[i]}/90`;
+            } else {
+                btn.disabled = true;
+                btn.className = `w-full ${btnColors[i]} text-white py-2.5 rounded-lg font-medium text-sm opacity-60 cursor-not-allowed`;
+            }
+        }
+    }
+    document.getElementById('sum-sessions').textContent = `${activeCount}/3`;
+}
+
+function updateSummaryBar() {
+    const today = getTodayString();
+    const checkin = loadData(STORAGE_KEYS.CHECKIN)[today];
+    let totalFocus = 0, totalSlacking = 0;
+
+    for (let i = 0; i < 3; i++) {
+        totalFocus += checkin.sessions[i]?.focusMinutes || 0;
+    }
+    checkin.slacking.forEach(s => { totalSlacking += s.minutes || 0; });
+
+    if (currentSession >= 0) totalFocus += Math.round(focusElapsed / 60);
+    if (slackingActive) totalSlacking += Math.round(slackingElapsed / 60);
+
+    document.getElementById('sum-focus').textContent = formatMinutes(totalFocus);
+    document.getElementById('sum-slacking').textContent = formatMinutes(totalSlacking);
+    if (checkin.wakeup) document.getElementById('sum-wakeup').textContent = checkin.wakeup;
+}
+
+function updateSlackingDisplay() {
+    if (slackingStart) {
+        const sec = Math.round((new Date() - slackingStart) / 1000);
+        document.getElementById('slacking-timer').textContent = formatSeconds(sec);
+    }
 }
 
 function initCheckin() {
@@ -788,67 +1069,37 @@ function initCheckin() {
     const checkin = loadData(STORAGE_KEYS.CHECKIN)[today];
     if (!checkin) return;
 
-    // Morning
-    if (checkin.morning) {
-        document.getElementById('morning-time').textContent = checkin.morning;
-        document.getElementById('morning-status-text').textContent = '已打卡';
-        document.getElementById('btn-morning').textContent = '已打卡';
-        document.getElementById('btn-morning').disabled = true;
-        document.getElementById('btn-morning').className = 'w-full bg-gray-300 text-gray-500 py-2.5 rounded-lg font-medium text-sm cursor-not-allowed';
+    // 起床
+    if (checkin.wakeup) {
+        document.getElementById('sum-wakeup').textContent = checkin.wakeup;
+        document.getElementById('status-morning').textContent = checkin.wakeup;
     }
 
-    // Work start
-    if (checkin.workStart) {
-        document.getElementById('work-start-time').textContent = checkin.workStart;
-        document.getElementById('work-start-status-text').textContent = '已打卡';
-        document.getElementById('btn-work-start').textContent = '已打卡';
-        document.getElementById('btn-work-start').disabled = true;
-        document.getElementById('btn-work-start').className = 'w-full bg-gray-300 text-gray-500 py-2.5 rounded-lg font-medium text-sm cursor-not-allowed';
+    // 三个session
+    const btnColors = ['bg-primary', 'bg-success', 'bg-warning'];
+    for (let i = 0; i < 3; i++) {
+        const s = checkin.sessions[i];
+        if (!s) continue;
+
+        if (s.start) {
+            document.getElementById(`time-session-${i}-start`).textContent = s.start;
+            if (s.end) {
+                document.getElementById(`time-session-${i}-end`).textContent = s.end;
+                document.getElementById(`dur-session-${i}`).textContent = formatMinutes(s.focusMinutes);
+                document.getElementById(`btn-session-${i}`).textContent = '✓ 已结束';
+                document.getElementById(`btn-session-${i}`).disabled = true;
+                document.getElementById(`btn-session-${i}`).className = `w-full ${btnColors[i]} text-white py-2.5 rounded-lg font-medium text-sm opacity-60 cursor-not-allowed`;
+            } else {
+                document.getElementById(`btn-session-${i}`).textContent = '⏹ 结束工作';
+                document.getElementById(`btn-session-${i}`).disabled = false;
+                document.getElementById(`card-session-${i}`).classList.add('ring-2', 'ring-yellow-400');
+            }
+        }
     }
 
-    // Work end
-    if (checkin.workEnd) {
-        document.getElementById('work-end-time').textContent = checkin.workEnd;
-        document.getElementById('work-end-status-text').textContent = '已打卡';
-        document.getElementById('btn-work-end').textContent = '已打卡';
-        document.getElementById('btn-work-end').disabled = true;
-        document.getElementById('btn-work-end').className = 'w-full bg-gray-300 text-gray-500 py-2.5 rounded-lg font-medium text-sm cursor-not-allowed';
-    } else if (checkin.workStart) {
-        document.getElementById('btn-work-end').disabled = false;
-    }
-
-    // Focus display
-    if (checkin.focusMinutes > 0) {
-        document.getElementById('focus-duration-text').textContent = `累计 ${formatMinutes(checkin.focusMinutes)}`;
-    }
-
-    updateCheckinTable();
-}
-
-function updateCheckinTable() {
-    const today = getTodayString();
-    const c = loadData(STORAGE_KEYS.CHECKIN)[today] || {};
-    document.getElementById('t-morning').textContent = c.morning || '-';
-    document.getElementById('t-work-start').textContent = c.workStart || '-';
-    document.getElementById('t-work-end').textContent = c.workEnd || '-';
-    document.getElementById('s-morning').textContent = c.morning ? getMorningStatus(c.morning) : '-';
-    document.getElementById('s-work-start').textContent = c.workStart ? getWorkStartStatus(c.workStart) : '-';
-    document.getElementById('s-work-end').textContent = c.workEnd ? '已完成' : '-';
-}
-
-function getMorningStatus(time) {
-    const hour = parseInt(time.split(':')[0]);
-    if (hour <= 8) return '✅ 很早';
-    if (hour <= 10) return '✅ 正常';
-    if (hour <= 12) return '⚠️ 稍晚';
-    return '❌ 昼夜颠倒';
-}
-
-function getWorkStartStatus(time) {
-    const hour = parseInt(time.split(':')[0]);
-    if (hour <= 14) return '✅ 按时';
-    if (hour <= 16) return '⚠️ 稍晚';
-    return '❌ 很晚';
+    updateSessionButtons();
+    updateSummaryBar();
+    renderSlackingRecords();
 }
 
 function startFocusTimer() {
@@ -862,17 +1113,24 @@ function stopFocusTimer() {
     if (focusTimer) clearInterval(focusTimer);
     focusTimer = null;
     focusStartTime = null;
-    document.getElementById('focus-duration-text').textContent = '';
 }
 
 function updateFocusDisplay() {
     if (!focusStartTime) return;
     const now = new Date();
-    const today = getTodayString();
-    const c = loadData(STORAGE_KEYS.CHECKIN)[today] || {};
-    const totalMinutes = c.focusMinutes + Math.round((now - focusStartTime) / 60000);
-    document.getElementById('focus-duration-text').textContent = `本次 ${formatMinutes(Math.round((now - focusStartTime) / 60000))}`;
-    document.getElementById('status-focus').textContent = formatMinutes(totalMinutes);
+    // 计算从session开始到现在的纯专注秒数（减去摸鱼时间）
+    const elapsedSec = Math.round((now - focusStartTime) / 1000);
+    let pureFocusSec = elapsedSec;
+    if (slackingActive && slackingStart) {
+        pureFocusSec = elapsedSec - slackingElapsed;
+    }
+    const pureFocusMin = Math.round(pureFocusSec / 60);
+    focusElapsed = pureFocusSec;
+
+    if (currentSession >= 0) {
+        document.getElementById(`dur-session-${currentSession}`).textContent = formatSeconds(pureFocusSec);
+    }
+    updateSummaryBar();
 }
 
 function formatMinutes(mins) {
@@ -880,6 +1138,63 @@ function formatMinutes(mins) {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     return m > 0 ? `${h}h${m}min` : `${h}h`;
+}
+
+function formatSeconds(sec) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function updateTodayStatus() {
+    const today = getTodayString();
+    const checkin = loadData(STORAGE_KEYS.CHECKIN)[today];
+
+    // 三段工作状态
+    for (let i = 0; i < 3; i++) {
+        const s = checkin.sessions[i];
+        const el = document.getElementById(`status-session-${i}`);
+        if (!s) { el && (el.textContent = '-'); continue; }
+        if (!s.start) {
+            el && (el.textContent = '-');
+        } else if (!s.end) {
+            el && (el.textContent = s.start + ' ▶');
+        } else {
+            el && (el.textContent = formatMinutes(s.focusMinutes));
+        }
+    }
+
+    // 摸鱼
+    let totalSlacking = 0;
+    checkin.slacking.forEach(s => { totalSlacking += s.minutes || 0; });
+    if (slackingActive) totalSlacking += Math.round(slackingElapsed / 60);
+    const slackingEl = document.getElementById('status-slacking');
+    if (slackingEl) slackingEl.textContent = formatMinutes(totalSlacking);
+
+    // 运动
+    const exercise = loadData(STORAGE_KEYS.EXERCISE)[today] || [];
+    const totalEx = exercise.reduce((sum, e) => sum + (e.minutes || 0), 0);
+    const exEl = document.getElementById('status-exercise');
+    if (exEl) exEl.textContent = totalEx > 0 ? formatMinutes(totalEx) : '-';
+
+    // 休息
+    const rest = loadData(STORAGE_KEYS.REST)[today];
+    const restEl = document.getElementById('status-rest');
+    if (restEl) {
+        if (rest) {
+            if (rest.type === 'full') {
+                restEl.textContent = '整天';
+            } else if (rest.type === 'range' && rest.start && rest.end) {
+                restEl.textContent = `${rest.start}~${rest.end}`;
+            }
+            restEl.className = 'font-medium text-warning';
+        } else {
+            restEl.textContent = '否';
+            restEl.className = 'font-medium text-success';
+        }
+    }
 }
 
 // ========== EXERCISE ==========
@@ -1216,7 +1531,8 @@ function updateStatisticsCharts(period) {
         const ed = exercise[ds] || [];
         const rd = rest[ds];
 
-        const focusMins = cd.focusMinutes || 0;
+        // 计算总专注时长（三段之和）
+        const focusMins = (cd.sessions || []).reduce((sum, s) => sum + (s.focusMinutes || 0), 0);
         focusData.push(Math.round(focusMins / 60 * 10) / 10);
         totalFocusMins += focusMins;
         if (focusMins > 0) workedDays++;
@@ -1268,15 +1584,22 @@ function renderStatsTable(checkin, exercise, rest, days) {
         const ds = d.toISOString().split('T')[0];
         const cd = checkin[ds] || {};
         const ed = exercise[ds] || [];
+        const sessions = cd.sessions || [];
         const exTotal = ed.reduce((s, r) => s + r.minutes, 0);
+        const slackingTotal = (cd.slacking || []).reduce((sum, s) => sum + (s.minutes || 0), 0);
+        const focusTotal = sessions.reduce((sum, s) => sum + (s.focusMinutes || 0), 0);
+        const sessionTimes = sessions.map(s => s.start ? `${s.start}~${s.end || '进行中'}` : '-');
+
         rows.push(`
             <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
                 <td class="py-1.5 px-3 text-xs text-gray-500">${ds}</td>
-                <td class="py-1.5 px-3 text-xs">${cd.morning || '-'}</td>
-                <td class="py-1.5 px-3 text-xs">${cd.workStart || '-'}</td>
-                <td class="py-1.5 px-3 text-xs">${cd.workEnd || '-'}</td>
-                <td class="py-1.5 px-3 text-xs text-success font-medium">${cd.focusMinutes ? formatMinutes(cd.focusMinutes) : '-'}</td>
-                <td class="py-1.5 px-3 text-xs text-warning font-medium">${exTotal > 0 ? `${exTotal}min` : '-'}</td>
+                <td class="py-1.5 px-3 text-xs">${cd.wakeup || '-'}</td>
+                <td class="py-1.5 px-3 text-xs">${sessionTimes[0] || '-'}</td>
+                <td class="py-1.5 px-3 text-xs">${sessionTimes[1] || '-'}</td>
+                <td class="py-1.5 px-3 text-xs">${sessionTimes[2] || '-'}</td>
+                <td class="py-1.5 px-3 text-xs text-success font-medium">${focusTotal > 0 ? formatMinutes(focusTotal) : '-'}</td>
+                <td class="py-1.5 px-3 text-xs text-warning font-medium">${slackingTotal > 0 ? formatMinutes(slackingTotal) : '-'}</td>
+                <td class="py-1.5 px-3 text-xs text-orange-500 font-medium">${exTotal > 0 ? `${exTotal}min` : '-'}</td>
             </tr>
         `);
     }
