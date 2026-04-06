@@ -22,6 +22,8 @@ OramMC.github.io/
 ├── assets/
 │   ├── cv.pdf          # Your CV
 │   └── slides/         # Weekly report slides
+├── tools/
+│   └── checkin.html    # Private daily check-in tool (easter egg)
 └── README.md           # This file
 ```
 
@@ -46,10 +48,15 @@ Add a new `<div class="pub-item">` block in the Publications section.
 
 ## 🎨 Theme
 
-Using "Deep Space" color scheme:
-- Primary Background: #0a192f
-- Accent Color: #64ffda (Pulsar Cyan)
-- Secondary Accent: #ffd700 (Star Gold)
+Light mode by default, dark mode available via the toggle button in the sidebar footer.
+
+- Primary Background: #ffffff / #0d1117 (dark)
+- Accent Color: #0066cc / #64ffda (dark)
+- Secondary Accent: #ff6b35 / #ffd700 (dark)
+
+## 🔧 Private Tools
+
+Easter egg: click the © in the footer → [打卡工具](tools/checkin.html)
 
 ## 📝 License
 
@@ -57,4 +64,4 @@ MIT License - Feel free to use and modify!
 
 ---
 
-*Last updated: February 2026*
+*Last updated: April 2026*

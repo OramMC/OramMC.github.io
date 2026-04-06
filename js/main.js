@@ -3,6 +3,9 @@
    ======================================== */
 
 document.addEventListener('DOMContentLoaded', function() {
+    // 加载主题偏好
+    loadThemePreference();
+    
     // 导航高亮
     initNavHighlight();
     
@@ -114,19 +117,29 @@ function initScrollAnimations() {
 }
 
 /**
- * 暗色/亮色主题切换（可选功能）
+ * 暗色/亮色主题切换
  */
 function toggleTheme() {
-    document.body.classList.toggle('light-theme');
-    localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+    document.body.classList.toggle('dark-theme');
+    const isDark = document.body.classList.contains('dark-theme');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    updateThemeIcon(isDark);
+}
+
+function updateThemeIcon(isDark) {
+    const icon = document.getElementById('theme-icon');
+    if (!icon) return;
+    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
 }
 
 // 检查保存的主题偏好
 function loadThemePreference() {
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-        document.body.classList.add('light-theme');
+    const isDark = savedTheme === 'dark';
+    if (isDark) {
+        document.body.classList.add('dark-theme');
     }
+    updateThemeIcon(isDark);
 }
 
 // 打字机效果（可用于标题）

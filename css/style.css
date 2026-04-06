@@ -13,12 +13,26 @@
     --text-primary: #1a1a1a;
     --text-secondary: #555555;
     --text-muted: #999999;
+    --avatar-glow: rgba(0, 102, 204, 0.25);
     
     /* 布局变量 */
     --sidebar-width: 280px;
     --content-max-width: 900px;
     --border-radius: 8px;
     --transition: all 0.3s ease;
+}
+
+/* 暗色主题 */
+body.dark-theme {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --accent-primary: #64ffda;
+    --accent-secondary: #ffd700;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --avatar-glow: rgba(100, 255, 218, 0.3);
 }
 
 /* Reset & Base */
@@ -49,22 +63,30 @@ body {
     height: 100%;
     pointer-events: none;
     z-index: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+body.dark-theme .stars,
+body.dark-theme .stars2,
+body.dark-theme .stars3 {
+    opacity: 1;
 }
 
 .stars {
-    background: transparent url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle fill="%230066cc" cx="50" cy="50" r="0.5" opacity="0.08"/></svg>') repeat;
+    background: transparent url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle fill="%23ffffff" cx="50" cy="50" r="1" opacity="0.9"/></svg>') repeat;
     background-size: 100px 100px;
     animation: animateStars 100s linear infinite;
 }
 
 .stars2 {
-    background: transparent url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle fill="%23ff6b35" cx="30" cy="70" r="0.4" opacity="0.06"/></svg>') repeat;
+    background: transparent url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle fill="%23ffd700" cx="30" cy="70" r="0.8" opacity="0.8"/></svg>') repeat;
     background-size: 150px 150px;
     animation: animateStars 150s linear infinite;
 }
 
 .stars3 {
-    background: transparent url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle fill="%230066cc" cx="70" cy="30" r="0.3" opacity="0.04"/></svg>') repeat;
+    background: transparent url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle fill="%2364ffda" cx="70" cy="30" r="0.6" opacity="0.7"/></svg>') repeat;
     background-size: 200px 200px;
     animation: animateStars 200s linear infinite;
 }
@@ -114,12 +136,12 @@ body {
     border: 3px solid var(--accent-primary);
     margin-bottom: 15px;
     transition: var(--transition);
-    box-shadow: 0 0 20px rgba(100, 255, 218, 0.3);
+    box-shadow: 0 0 20px var(--avatar-glow);
 }
 
 .avatar:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 30px rgba(100, 255, 218, 0.5);
+    box-shadow: 0 0 30px var(--avatar-glow);
 }
 
 .name {
@@ -348,7 +370,7 @@ body {
 .research-card:hover {
     transform: translateY(-5px);
     border-color: var(--accent-primary);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .research-icon {
@@ -616,6 +638,33 @@ body {
     color: var(--accent-secondary);
 }
 
+/* Theme Toggle Button */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    margin: 0 auto 12px;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background-color: var(--bg-tertiary);
+}
+
+body.dark-theme .theme-toggle:hover {
+    border-color: var(--accent-primary);
+    background-color: rgba(100, 255, 218, 0.1);
+}
+
 /* Footer */
 .main-footer {
     margin-top: 60px;
@@ -632,6 +681,36 @@ body {
 
 .main-footer i {
     color: var(--accent-secondary);
+}
+
+/* Footer secret easter egg link */
+.footer-secret {
+    margin-top: 8px;
+}
+
+.secret-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+    display: inline-block;
+}
+
+.secret-link:hover {
+    opacity: 0;
+    color: var(--text-muted);
+}
+
+/* ========================================
+   暗色主题深空星空卡片光效
+   ======================================== */
+body.dark-theme .research-card:hover {
+    box-shadow: 0 10px 30px rgba(100, 255, 218, 0.1);
+}
+
+body.dark-theme .gallery-item:hover img {
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* ========================================
@@ -727,4 +806,15 @@ body {
 ::selection {
     background-color: var(--accent-primary);
     color: var(--bg-primary);
+}
+
+/* ========================================
+   暗色主题滚动条
+   ======================================== */
+body.dark-theme ::-webkit-scrollbar-thumb {
+    background: #30363d;
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
 }
