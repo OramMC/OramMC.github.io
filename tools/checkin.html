@@ -289,20 +289,29 @@
 
                         <!-- 摸鱼记录 -->
                         <div class="bg-red-50 rounded-xl p-4">
-                            <div class="flex items-center justify-between">
+                            <div class="flex items-center justify-between mb-3">
                                 <div>
                                     <h3 class="text-sm font-semibold text-red-600 mb-1">🐟 摸鱼记录</h3>
-                                    <p class="text-xs text-gray-400">点击开始计时，摸鱼期间专注计时暂停</p>
+                                    <p class="text-xs text-gray-400">记录摸鱼次数，专注计时不受影响</p>
                                 </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="text-right">
-                                        <p class="text-xl font-bold text-danger" id="slacking-timer">00:00</p>
-                                        <p class="text-xs text-gray-400">本次摸鱼</p>
+                                <div class="flex items-center gap-4">
+                                    <div class="text-center">
+                                        <p class="text-2xl font-bold text-orange-500" id="slacking-active-count">0</p>
+                                        <p class="text-xs text-gray-400">主动摸鱼</p>
                                     </div>
-                                    <button id="btn-slacking" onclick="toggleSlacking()" class="bg-danger text-white px-5 py-2.5 rounded-lg font-medium hover:bg-danger/90 transition-all text-sm">
-                                        🎮 开始摸鱼
-                                    </button>
+                                    <div class="text-center">
+                                        <p class="text-2xl font-bold text-gray-400" id="slacking-passive-count">0</p>
+                                        <p class="text-xs text-gray-400">被动补救</p>
+                                    </div>
                                 </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="recordSlacking('active')" class="bg-orange-100 hover:bg-orange-200 text-orange-700 py-3 rounded-xl font-semibold transition-all text-sm">
+                                    🎮 主动摸鱼
+                                </button>
+                                <button onclick="recordSlacking('passive')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 py-3 rounded-xl font-semibold transition-all text-sm">
+                                    ⚡ 被动补救
+                                </button>
                             </div>
                             <!-- 今日摸鱼记录列表 -->
                             <div id="slacking-records" class="mt-3 space-y-1"></div>
@@ -398,8 +407,27 @@
                         </div>
 
                         <!-- 任务列表 -->
-                        <div id="task-list" class="space-y-2">
+                        <div id="task-list" class="space-y-2 mb-6">
                             <p class="text-sm text-gray-400 text-center py-4">暂无任务</p>
+                        </div>
+
+                        <!-- 明日规划 -->
+                        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border-2 border-purple-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-sm font-semibold text-purple-600 flex items-center gap-2">
+                                    🌙 明日规划
+                                </h3>
+                                <span class="text-xs text-purple-400">新的一天，新的开始</span>
+                            </div>
+                            <div class="flex gap-3">
+                                <input type="text" id="tomorrow-input" placeholder="规划明天的任务..." class="flex-1 px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none text-sm bg-white">
+                                <button onclick="addTomorrowTask()" class="bg-purple-500 text-white px-5 py-2 rounded-lg font-medium hover:bg-purple-600 transition-all text-sm">
+                                    添加
+                                </button>
+                            </div>
+                            <div id="tomorrow-list" class="space-y-2 mt-3">
+                                <p class="text-sm text-gray-400 text-center py-3">明天暂时没有规划</p>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -529,7 +557,7 @@
                                         <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">第二段</th>
                                         <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">第三段</th>
                                         <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">专注</th>
-                                        <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">摸鱼</th>
+                                        <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">摸鱼(次)</th>
                                         <th class="py-2 px-3 text-left text-xs font-medium text-gray-500">运动</th>
                                     </tr>
                                 </thead>
@@ -553,7 +581,8 @@ const STORAGE_KEYS = {
     CHECKIN: 'ts_checkin',
     EXERCISE: 'ts_exercise',
     TASKS: 'ts_tasks',
-    REST: 'ts_rest'
+    REST: 'ts_rest',
+    TOMORROW: 'ts_tomorrow'
 };
 
 // ========== STATE ==========
@@ -565,10 +594,9 @@ let focusLastPaused = 0;     // 摸鱼开始时累计的秒数
 let focusChart = null;
 let restFormType = 'full';
 let currentSession = -1;    // 当前活跃的session index，-1表示无
-let slackingTimer = null;
-let slackingStart = null;
-let slackingActive = false;
-let slackingElapsed = 0;
+let slackingActive = 0;     // 主动摸鱼次数
+let slackingPassive = 0;    // 被动补救次数
+let slackingActiveFlag = false; // 是否正在摸鱼（用于计时）
 
 // ========== PASSWORD SYSTEM ==========
 function pwdInput(digit) {
@@ -719,6 +747,7 @@ function initApp() {
     initCheckin();
     initExercise();
     initTasks();
+    initTomorrowTasks();
     initRest();
     initStats();
     updateTodayStatus();
@@ -763,15 +792,11 @@ function initData() {
         }
     }
 
-    // Resume slacking timer if active
-    if (checkin[today].slacking.length > 0) {
-        const last = checkin[today].slacking[checkin[today].slacking.length - 1];
-        if (!last.end) {
-            slackingStart = new Date(`${today}T${last.start}`);
-            slackingActive = true;
-            startSlackingTimer();
-        }
-    }
+    // 恢复摸鱼次数统计
+    const activeCount = checkin[today].slacking.filter(s => s.type === 'active').length;
+    const passiveCount = checkin[today].slacking.filter(s => s.type === 'passive').length;
+    slackingActive = activeCount;
+    slackingPassive = passiveCount;
 
     // Ensure today's exercise data exists
     let exercise = loadData(STORAGE_KEYS.EXERCISE);
@@ -809,7 +834,6 @@ function updateDateTime() {
     const dateEl = document.getElementById('checkin-date-label');
     if (dateEl) dateEl.textContent = now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
     if (focusStartTime) updateFocusDisplay();
-    if (slackingActive) updateSlackingDisplay();
 }
 
 // ========== NAVIGATION ==========
@@ -855,7 +879,7 @@ function toggleSession(idx) {
             const prevSession = prevCheckin[today].sessions[prev];
             prevSession.end = prevTime;
             // 减去摸鱼时间
-            if (slackingActive) {
+            if (slackingActiveFlag && slackingStart) {
                 const slackingSec = Math.round((new Date() - slackingStart) / 1000);
                 prevSession.focusMinutes = Math.round((focusElapsed - slackingSec) / 60);
             } else {
@@ -893,7 +917,7 @@ function toggleSession(idx) {
         // === 结束工作 ===
         session.end = time;
         const totalSec = Math.round((new Date() - focusStartTime) / 1000);
-        if (slackingActive) {
+        if (slackingActiveFlag && slackingStart) {
             const slackingSec = Math.round((new Date() - slackingStart) / 1000);
             session.focusMinutes = Math.round((totalSec - slackingSec) / 60);
         } else {
@@ -918,88 +942,47 @@ function toggleSession(idx) {
     updateSummaryBar();
 }
 
-function toggleSlacking() {
+function recordSlacking(type) {
     const today = getTodayString();
     const time = getNowTime();
 
-    if (!slackingActive) {
-        // === 开始摸鱼 ===
-        if (focusStartTime && currentSession >= 0) {
-            focusLastPaused = focusElapsed;
-        }
+    let checkin = loadData(STORAGE_KEYS.CHECKIN);
+    checkin[today].slacking.push({
+        start: time,
+        end: time,
+        minutes: 0,
+        type: type  // 'active' or 'passive'
+    });
+    saveData(STORAGE_KEYS.CHECKIN, checkin);
 
-        let checkin = loadData(STORAGE_KEYS.CHECKIN);
-        checkin[today].slacking.push({ start: time, end: null, minutes: 0 });
-        saveData(STORAGE_KEYS.CHECKIN, checkin);
-
-        slackingStart = new Date();
-        slackingActive = true;
-        startSlackingTimer();
-
-        document.getElementById('btn-slacking').textContent = '⏸ 结束摸鱼';
-        document.getElementById('btn-slacking').className = 'bg-gray-400 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-gray-500 transition-all text-sm';
-
-        // 暂停专注计时
-        if (focusTimer) { clearInterval(focusTimer); focusTimer = null; }
+    if (type === 'active') {
+        slackingActive++;
+        document.getElementById('slacking-active-count').textContent = slackingActive;
     } else {
-        // === 结束摸鱼 ===
-        let checkin = loadData(STORAGE_KEYS.CHECKIN);
-        const slackingSec = Math.round((new Date() - slackingStart) / 1000);
-        const last = checkin[today].slacking[checkin[today].slacking.length - 1];
-        last.end = time;
-        last.minutes = Math.round(slackingSec / 60);
-        saveData(STORAGE_KEYS.CHECKIN, checkin);
-
-        slackingActive = false;
-        stopSlackingTimer();
-
-        document.getElementById('btn-slacking').textContent = '🎮 开始摸鱼';
-        document.getElementById('btn-slacking').className = 'bg-danger text-white px-5 py-2.5 rounded-lg font-medium hover:bg-danger/90 transition-all text-sm';
-        document.getElementById('slacking-timer').textContent = '00:00';
-        slackingElapsed = 0;
-
-        // 恢复专注计时
-        if (currentSession >= 0) {
-            focusStartTime = new Date();
-            startFocusTimer();
-        }
-
-        renderSlackingRecords();
+        slackingPassive++;
+        document.getElementById('slacking-passive-count').textContent = slackingPassive;
     }
+
+    renderSlackingRecords();
     updateSummaryBar();
     updateTodayStatus();
-}
-
-function startSlackingTimer() {
-    if (slackingTimer) clearInterval(slackingTimer);
-    slackingTimer = setInterval(() => {
-        if (slackingStart) {
-            const sec = Math.round((new Date() - slackingStart) / 1000);
-            document.getElementById('slacking-timer').textContent = formatSeconds(sec);
-            slackingElapsed = sec;
-        }
-    }, 1000);
-}
-
-function stopSlackingTimer() {
-    if (slackingTimer) { clearInterval(slackingTimer); slackingTimer = null; }
-    slackingStart = null;
 }
 
 function renderSlackingRecords() {
     const today = getTodayString();
     const checkin = loadData(STORAGE_KEYS.CHECKIN)[today];
     const container = document.getElementById('slacking-records');
-    if (!container) return;
+    if (!container || !checkin) return;
 
-    const records = checkin.slacking.filter(r => r.start);
+    const records = (checkin.slacking || []).filter(r => r.start);
     if (records.length === 0) { container.innerHTML = ''; return; }
 
     container.innerHTML = records.map(r => {
-        const endStr = r.end || '进行中';
+        const emoji = r.type === 'active' ? '🎮' : '⚡';
+        const label = r.type === 'active' ? '主动' : '补救';
         return `<div class="flex items-center justify-between text-xs py-1 border-b border-red-100 last:border-0">
-            <span class="text-gray-500">${r.start} → ${endStr}</span>
-            <span class="text-danger font-medium">${r.minutes}分钟</span>
+            <span class="text-gray-500">${emoji} ${label}</span>
+            <span class="text-gray-400">${r.start}</span>
         </div>`;
     }).join('');
 }
@@ -1042,26 +1025,26 @@ function updateSessionButtons() {
 function updateSummaryBar() {
     const today = getTodayString();
     const checkin = loadData(STORAGE_KEYS.CHECKIN)[today];
+    if (!checkin) return;
     let totalFocus = 0, totalSlacking = 0;
 
     for (let i = 0; i < 3; i++) {
         totalFocus += checkin.sessions[i]?.focusMinutes || 0;
     }
-    checkin.slacking.forEach(s => { totalSlacking += s.minutes || 0; });
+    // 摸鱼次数（主动+被动）
+    const activeCount = (checkin.slacking || []).filter(s => s.type === 'active').length;
+    const passiveCount = (checkin.slacking || []).filter(s => s.type === 'passive').length;
+    totalSlacking = activeCount + passiveCount;
 
     if (currentSession >= 0) totalFocus += Math.round(focusElapsed / 60);
-    if (slackingActive) totalSlacking += Math.round(slackingElapsed / 60);
 
     document.getElementById('sum-focus').textContent = formatMinutes(totalFocus);
-    document.getElementById('sum-slacking').textContent = formatMinutes(totalSlacking);
+    document.getElementById('sum-slacking').textContent = `${totalSlacking}次`;
     if (checkin.wakeup) document.getElementById('sum-wakeup').textContent = checkin.wakeup;
 }
 
 function updateSlackingDisplay() {
-    if (slackingStart) {
-        const sec = Math.round((new Date() - slackingStart) / 1000);
-        document.getElementById('slacking-timer').textContent = formatSeconds(sec);
-    }
+    // 不再需要，因为摸鱼不再计时
 }
 
 function initCheckin() {
@@ -1100,6 +1083,10 @@ function initCheckin() {
     updateSessionButtons();
     updateSummaryBar();
     renderSlackingRecords();
+
+    // 初始化摸鱼次数显示（从 initData 设置的全局变量取）
+    document.getElementById('slacking-active-count').textContent = slackingActive;
+    document.getElementById('slacking-passive-count').textContent = slackingPassive;
 }
 
 function startFocusTimer() {
@@ -1121,7 +1108,7 @@ function updateFocusDisplay() {
     // 计算从session开始到现在的纯专注秒数（减去摸鱼时间）
     const elapsedSec = Math.round((now - focusStartTime) / 1000);
     let pureFocusSec = elapsedSec;
-    if (slackingActive && slackingStart) {
+    if (slackingActiveFlag && slackingStart) {
         pureFocusSec = elapsedSec - slackingElapsed;
     }
     const pureFocusMin = Math.round(pureFocusSec / 60);
@@ -1151,6 +1138,7 @@ function formatSeconds(sec) {
 function updateTodayStatus() {
     const today = getTodayString();
     const checkin = loadData(STORAGE_KEYS.CHECKIN)[today];
+    if (!checkin) return;
 
     // 三段工作状态
     for (let i = 0; i < 3; i++) {
@@ -1167,11 +1155,11 @@ function updateTodayStatus() {
     }
 
     // 摸鱼
-    let totalSlacking = 0;
-    checkin.slacking.forEach(s => { totalSlacking += s.minutes || 0; });
-    if (slackingActive) totalSlacking += Math.round(slackingElapsed / 60);
+    const activeCount = (checkin.slacking || []).filter(s => s.type === 'active').length;
+    const passiveCount = (checkin.slacking || []).filter(s => s.type === 'passive').length;
+    const totalSlacking = activeCount + passiveCount;
     const slackingEl = document.getElementById('status-slacking');
-    if (slackingEl) slackingEl.textContent = formatMinutes(totalSlacking);
+    if (slackingEl) slackingEl.textContent = totalSlacking > 0 ? `${totalSlacking}次` : '-';
 
     // 运动
     const exercise = loadData(STORAGE_KEYS.EXERCISE)[today] || [];
@@ -1358,6 +1346,64 @@ function deleteTask(index) {
     renderTaskList();
 }
 
+// ========== TOMORROW TASKS ==========
+function initTomorrowTasks() {
+    // 检查是否跨天，清空明日规划
+    const lastDate = localStorage.getItem('ts_tomorrow_date');
+    const today = getTodayString();
+    if (lastDate && lastDate !== today) {
+        localStorage.removeItem(STORAGE_KEYS.TOMORROW);
+    }
+    localStorage.setItem('ts_tomorrow_date', today);
+    renderTomorrowList();
+}
+
+function addTomorrowTask() {
+    const input = document.getElementById('tomorrow-input');
+    const name = input.value.trim();
+    if (!name) return;
+
+    let tomorrow = loadData(STORAGE_KEYS.TOMORROW) || [];
+    tomorrow.push({ name, done: false });
+    saveData(STORAGE_KEYS.TOMORROW, tomorrow);
+    input.value = '';
+    renderTomorrowList();
+}
+
+function toggleTomorrowTask(index) {
+    let tomorrow = loadData(STORAGE_KEYS.TOMORROW) || [];
+    tomorrow[index].done = !tomorrow[index].done;
+    saveData(STORAGE_KEYS.TOMORROW, tomorrow);
+    renderTomorrowList();
+}
+
+function deleteTomorrowTask(index) {
+    let tomorrow = loadData(STORAGE_KEYS.TOMORROW) || [];
+    tomorrow.splice(index, 1);
+    saveData(STORAGE_KEYS.TOMORROW, tomorrow);
+    renderTomorrowList();
+}
+
+function renderTomorrowList() {
+    const tomorrow = loadData(STORAGE_KEYS.TOMORROW) || [];
+    const container = document.getElementById('tomorrow-list');
+
+    if (tomorrow.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-400 text-center py-3">明天暂时没有规划</p>';
+        return;
+    }
+
+    container.innerHTML = tomorrow.map((t, i) => `
+        <div class="flex items-center gap-3 bg-white rounded-lg px-4 py-2.5 text-sm">
+            <button onclick="toggleTomorrowTask(${i})" class="w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${t.done ? 'bg-purple-500 border-purple-500 text-white' : 'border-purple-300 hover:border-purple-500'}">
+                ${t.done ? '<i class="fa fa-check text-white text-xs"></i>' : ''}
+            </button>
+            <span class="flex-1 ${t.done ? 'line-through text-gray-400' : 'text-gray-800 font-medium'}">${t.name}</span>
+            <button onclick="deleteTomorrowTask(${i})" class="text-gray-400 hover:text-danger transition-colors"><i class="fa fa-trash-o text-xs"></i></button>
+        </div>
+    `).join('');
+}
+
 function renderTaskList() {
     const today = getTodayString();
     const tasks = loadData(STORAGE_KEYS.TASKS)[today] || [];
@@ -1456,21 +1502,25 @@ function updateRestDisplay() {
     const detailText = document.getElementById('rest-detail-text');
     const statusText = document.getElementById('rest-status-text');
 
+    if (!statusText || !detail) return;
+
     if (rest) {
         if (rest.type === 'full') {
             statusText.textContent = rest.reason;
             detail.classList.remove('hidden');
-            detailText.textContent = `全天休息`;
+            if (detailText) detailText.textContent = '全天休息';
         } else {
             statusText.textContent = rest.reason || '部分休息';
             detail.classList.remove('hidden');
-            detailText.textContent = `${rest.start} - ${rest.end}`;
+            if (detailText) detailText.textContent = `${rest.start} - ${rest.end}`;
         }
-        document.getElementById('status-rest').textContent = '是';
+        const srEl = document.getElementById('status-rest');
+        if (srEl) srEl.textContent = '是';
     } else {
         statusText.textContent = '正常上班';
         detail.classList.add('hidden');
-        document.getElementById('status-rest').textContent = '否';
+        const srEl = document.getElementById('status-rest');
+        if (srEl) srEl.textContent = '否';
     }
 }
 
@@ -1586,7 +1636,9 @@ function renderStatsTable(checkin, exercise, rest, days) {
         const ed = exercise[ds] || [];
         const sessions = cd.sessions || [];
         const exTotal = ed.reduce((s, r) => s + r.minutes, 0);
-        const slackingTotal = (cd.slacking || []).reduce((sum, s) => sum + (s.minutes || 0), 0);
+        const slackingActive = (cd.slacking || []).filter(s => s.type === 'active').length;
+        const slackingPassive = (cd.slacking || []).filter(s => s.type === 'passive').length;
+        const slackingTotal = slackingActive + slackingPassive;
         const focusTotal = sessions.reduce((sum, s) => sum + (s.focusMinutes || 0), 0);
         const sessionTimes = sessions.map(s => s.start ? `${s.start}~${s.end || '进行中'}` : '-');
 
@@ -1598,7 +1650,7 @@ function renderStatsTable(checkin, exercise, rest, days) {
                 <td class="py-1.5 px-3 text-xs">${sessionTimes[1] || '-'}</td>
                 <td class="py-1.5 px-3 text-xs">${sessionTimes[2] || '-'}</td>
                 <td class="py-1.5 px-3 text-xs text-success font-medium">${focusTotal > 0 ? formatMinutes(focusTotal) : '-'}</td>
-                <td class="py-1.5 px-3 text-xs text-warning font-medium">${slackingTotal > 0 ? formatMinutes(slackingTotal) : '-'}</td>
+                <td class="py-1.5 px-3 text-xs text-warning font-medium">${slackingTotal > 0 ? `${slackingTotal}次` : '-'}</td>
                 <td class="py-1.5 px-3 text-xs text-orange-500 font-medium">${exTotal > 0 ? `${exTotal}min` : '-'}</td>
             </tr>
         `);
@@ -1606,26 +1658,7 @@ function renderStatsTable(checkin, exercise, rest, days) {
     document.getElementById('stats-table-body').innerHTML = rows.join('');
 }
 
-// ========== TODAY STATUS SIDEBAR ==========
-function updateTodayStatus() {
-    const today = getTodayString();
-    const checkin = loadData(STORAGE_KEYS.CHECKIN)[today] || {};
-    const exercise = loadData(STORAGE_KEYS.EXERCISE)[today] || [];
-    const rest = loadData(STORAGE_KEYS.REST)[today];
 
-    document.getElementById('status-morning').textContent = checkin.morning || '-';
-    document.getElementById('status-work-start').textContent = checkin.workStart || '-';
-    document.getElementById('status-work-end').textContent = checkin.workEnd || '-';
-
-    const totalFocus = checkin.focusMinutes || 0;
-    document.getElementById('status-focus').textContent = totalFocus > 0 ? formatMinutes(totalFocus) : '-';
-
-    const exTotal = exercise.reduce((s, r) => s + r.minutes, 0);
-    document.getElementById('status-exercise').textContent = exTotal > 0 ? `${exTotal}分钟` : '-';
-
-    document.getElementById('status-rest').textContent = rest ? '是' : '否';
-    document.getElementById('status-rest').className = rest ? 'font-medium text-success' : 'font-medium text-gray-800';
-}
 
 // ========== KEYBOARD SUPPORT ==========
 document.addEventListener('keydown', function(e) {
