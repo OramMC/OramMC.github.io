@@ -206,6 +206,7 @@
                             <div class="bg-blue-50 rounded-xl p-3 text-center">
                                 <p class="text-xs text-gray-500 mb-1">☀️ 起床</p>
                                 <p class="text-lg font-bold text-primary" id="sum-wakeup">-</p>
+                                <button onclick="doMorningCheckin()" class="mt-1 text-xs text-primary hover:text-primary/80 font-medium">打卡</button>
                             </div>
                             <div class="bg-green-50 rounded-xl p-3 text-center">
                                 <p class="text-xs text-gray-500 mb-1">💪 专注时长</p>
@@ -488,7 +489,7 @@
                                     </div>
                                 </div>
                                 <label class="block text-xs text-gray-500 mb-1">备注</label>
-                                <input type="text" id="rest-reason-period" placeholder="例如：下午开会" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm">
+                                <input type="text" id="rest-reason-period" placeholder="例如：看电影" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none text-sm">
                             </div>
 
                             <button onclick="submitRest()" class="w-full bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-all btn-shadow">
@@ -597,6 +598,8 @@ let currentSession = -1;    // 当前活跃的session index，-1表示无
 let slackingActive = 0;     // 主动摸鱼次数
 let slackingPassive = 0;    // 被动补救次数
 let slackingActiveFlag = false; // 是否正在摸鱼（用于计时）
+let slackingStart = null;   // 摸鱼开始时间
+let slackingElapsed = 0;    // 摸鱼累计秒数
 
 // ========== PASSWORD SYSTEM ==========
 function pwdInput(digit) {
@@ -740,8 +743,10 @@ function showImportFeedback(msg, type) {
 }
 
 // ========== APP INIT ==========
+// 立即初始化数据，不依赖密码验证（打卡按钮在锁屏前即可点击）
+initData();
+
 function initApp() {
-    initData();
     updateDateTime();
     setInterval(updateDateTime, 1000);
     initCheckin();
@@ -808,15 +813,23 @@ function initData() {
     if (!tasks[today]) tasks[today] = [];
     saveData(STORAGE_KEYS.TASKS, tasks);
 
-    // Ensure rest data exists
+    // Ensure rest data exists（迁移旧数组格式）
     let rest = loadData(STORAGE_KEYS.REST);
-    if (!rest[today]) rest[today] = null;
+    if (Array.isArray(rest)) rest = {}; // 旧数据是数组，迁移
+    // 迁移旧的对象格式 rest[today] → rest[today] = [旧对象]
+    Object.keys(rest).forEach(key => {
+        if (rest[key] !== null && !Array.isArray(rest[key])) {
+            rest[key] = [rest[key]];
+        }
+    });
+    if (!rest[today]) rest[today] = []; // 改为数组，支持多个时段
     saveData(STORAGE_KEYS.REST, rest);
 }
 
 function loadData(key) {
     const d = localStorage.getItem(key);
-    return d ? JSON.parse(d) : (key === STORAGE_KEYS.EXERCISE || key === STORAGE_KEYS.TASKS ? {} : []);
+    if (!d) return {};
+    try { return JSON.parse(d); } catch { return {}; }
 }
 
 function saveData(key, data) {
@@ -852,6 +865,7 @@ function doMorningCheckin() {
     const today = getTodayString();
     const time = getNowTime();
     let checkin = loadData(STORAGE_KEYS.CHECKIN);
+    if (!checkin[today]) checkin[today] = { wakeup: null, sessions: [{start:null,end:null,focusMinutes:0},{start:null,end:null,focusMinutes:0},{start:null,end:null,focusMinutes:0}], slacking: [] };
     checkin[today].wakeup = time;
     saveData(STORAGE_KEYS.CHECKIN, checkin);
     document.getElementById('sum-wakeup').textContent = time;
@@ -863,7 +877,10 @@ function toggleSession(idx) {
     const today = getTodayString();
     const time = getNowTime();
     let checkin = loadData(STORAGE_KEYS.CHECKIN);
+    if (!checkin[today]) checkin[today] = { wakeup: null, sessions: [{start:null,end:null,focusMinutes:0},{start:null,end:null,focusMinutes:0},{start:null,end:null,focusMinutes:0}], slacking: [] };
+    if (!checkin[today].sessions) checkin[today].sessions = [{start:null,end:null,focusMinutes:0},{start:null,end:null,focusMinutes:0},{start:null,end:null,focusMinutes:0}];
     const session = checkin[today].sessions[idx];
+    console.log('toggleSession', idx, 'start=', session.start, 'end=', session.end, 'focusStartTime=', focusStartTime, 'currentSession=', currentSession);
     const card = document.getElementById(`card-session-${idx}`);
     const btn = document.getElementById(`btn-session-${idx}`);
     const btnColors = ['bg-primary', 'bg-success', 'bg-warning'];
@@ -878,10 +895,11 @@ function toggleSession(idx) {
             let prevCheckin = loadData(STORAGE_KEYS.CHECKIN);
             const prevSession = prevCheckin[today].sessions[prev];
             prevSession.end = prevTime;
-            // 减去摸鱼时间
+            // 减去摸鱼时间（摸鱼期间不计时）
             if (slackingActiveFlag && slackingStart) {
-                const slackingSec = Math.round((new Date() - slackingStart) / 1000);
-                prevSession.focusMinutes = Math.round((focusElapsed - slackingSec) / 60);
+                const slackingDuration = Math.round((new Date() - slackingStart) / 1000);
+                const pureFocus = Math.max(0, focusElapsed - slackingDuration);
+                prevSession.focusMinutes = Math.round(pureFocus / 60);
             } else {
                 prevSession.focusMinutes = Math.round(focusElapsed / 60);
             }
@@ -915,26 +933,32 @@ function toggleSession(idx) {
 
     } else if (!session.end) {
         // === 结束工作 ===
-        session.end = time;
-        const totalSec = Math.round((new Date() - focusStartTime) / 1000);
-        if (slackingActiveFlag && slackingStart) {
-            const slackingSec = Math.round((new Date() - slackingStart) / 1000);
-            session.focusMinutes = Math.round((totalSec - slackingSec) / 60);
-        } else {
-            session.focusMinutes = Math.round(totalSec / 60);
+        try {
+            session.end = time;
+            const totalSec = Math.round((new Date() - focusStartTime) / 1000);
+            if (slackingActiveFlag && slackingStart) {
+                const slackingDuration = Math.round((new Date() - slackingStart) / 1000);
+                const pureFocus = Math.max(0, totalSec - slackingDuration);
+                session.focusMinutes = Math.round(pureFocus / 60);
+            } else {
+                session.focusMinutes = Math.round(totalSec / 60);
+            }
+            checkin[today].sessions[idx] = session;
+            saveData(STORAGE_KEYS.CHECKIN, checkin);
+
+            stopFocusTimer();
+            focusElapsed = 0;
+            currentSession = -1;
+
+            btn.textContent = '✓ 已结束';
+            btn.disabled = true;
+            card.classList.remove('ring-2', 'ring-yellow-400');
+            document.getElementById(`time-session-${idx}-end`).textContent = time;
+            document.getElementById(`dur-session-${idx}`).textContent = formatMinutes(session.focusMinutes);
+        } catch(e) {
+            console.error('结束工作出错:', e);
+            alert('结束失败: ' + e.message);
         }
-        checkin[today].sessions[idx] = session;
-        saveData(STORAGE_KEYS.CHECKIN, checkin);
-
-        stopFocusTimer();
-        focusElapsed = 0;
-        currentSession = -1;
-
-        btn.textContent = '✓ 已结束';
-        btn.disabled = true;
-        card.classList.remove('ring-2', 'ring-yellow-400');
-        document.getElementById(`time-session-${idx}-end`).textContent = time;
-        document.getElementById(`dur-session-${idx}`).textContent = formatMinutes(session.focusMinutes);
     }
 
     updateSessionButtons();
@@ -947,6 +971,8 @@ function recordSlacking(type) {
     const time = getNowTime();
 
     let checkin = loadData(STORAGE_KEYS.CHECKIN);
+    if (!checkin[today]) checkin[today] = { wakeup: null, sessions: [{start:null,end:null,focusMinutes:0},{start:null,end:null,focusMinutes:0},{start:null,end:null,focusMinutes:0}], slacking: [] };
+    if (!checkin[today].slacking) checkin[today].slacking = [];
     checkin[today].slacking.push({
         start: time,
         end: time,
@@ -1109,9 +1135,10 @@ function updateFocusDisplay() {
     const elapsedSec = Math.round((now - focusStartTime) / 1000);
     let pureFocusSec = elapsedSec;
     if (slackingActiveFlag && slackingStart) {
-        pureFocusSec = elapsedSec - slackingElapsed;
+        const slackingDuration = Math.round((now - slackingStart) / 1000);
+        pureFocusSec = elapsedSec - slackingDuration;
     }
-    const pureFocusMin = Math.round(pureFocusSec / 60);
+    if (pureFocusSec < 0) pureFocusSec = 0;
     focusElapsed = pureFocusSec;
 
     if (currentSession >= 0) {
@@ -1168,14 +1195,17 @@ function updateTodayStatus() {
     if (exEl) exEl.textContent = totalEx > 0 ? formatMinutes(totalEx) : '-';
 
     // 休息
-    const rest = loadData(STORAGE_KEYS.REST)[today];
+    const restRaw = loadData(STORAGE_KEYS.REST)[today];
+    const restEntries = Array.isArray(restRaw) ? restRaw : (restRaw ? [restRaw] : []);
     const restEl = document.getElementById('status-rest');
     if (restEl) {
-        if (rest) {
-            if (rest.type === 'full') {
+        if (restEntries.length > 0) {
+            const fullRest = restEntries.find(e => e.type === 'full');
+            if (fullRest) {
                 restEl.textContent = '整天';
-            } else if (rest.type === 'range' && rest.start && rest.end) {
-                restEl.textContent = `${rest.start}~${rest.end}`;
+            } else {
+                const firstPeriod = restEntries.find(e => e.type === 'period');
+                restEl.textContent = firstPeriod ? `${firstPeriod.start}~${firstPeriod.end}` : '休息';
             }
             restEl.className = 'font-medium text-warning';
         } else {
@@ -1472,15 +1502,20 @@ function submitRest() {
     const today = getTodayString();
     let rest = loadData(STORAGE_KEYS.REST);
 
+    // 防御：确保 rest[today] 是数组
+    if (!rest[today] || !Array.isArray(rest[today])) {
+        rest[today] = [];
+    }
+
     if (restFormType === 'full') {
         const reason = document.getElementById('rest-reason-full').value.trim();
-        rest[today] = { type: 'full', reason: reason || '休息', time: getNowTime() };
+        rest[today].push({ type: 'full', reason: reason || '休息', time: getNowTime() });
     } else {
         const start = document.getElementById('rest-start').value;
         const end = document.getElementById('rest-end').value;
         const reason = document.getElementById('rest-reason-period').value.trim();
         if (!start || !end) { alert('请选择开始和结束时间'); return; }
-        rest[today] = { type: 'period', start, end, reason: reason || '休息时段', time: getNowTime() };
+        rest[today].push({ type: 'period', start, end, reason: reason || '休息时段', time: getNowTime() });
     }
 
     saveData(STORAGE_KEYS.REST, rest);
@@ -1497,52 +1532,70 @@ function initRest() {
 
 function updateRestDisplay() {
     const today = getTodayString();
-    const rest = loadData(STORAGE_KEYS.REST)[today];
+    const raw = loadData(STORAGE_KEYS.REST)[today];
+    const entries = Array.isArray(raw) ? raw : (raw ? [raw] : []);
     const detail = document.getElementById('rest-detail');
     const detailText = document.getElementById('rest-detail-text');
     const statusText = document.getElementById('rest-status-text');
 
     if (!statusText || !detail) return;
 
-    if (rest) {
-        if (rest.type === 'full') {
-            statusText.textContent = rest.reason;
-            detail.classList.remove('hidden');
-            if (detailText) detailText.textContent = '全天休息';
-        } else {
-            statusText.textContent = rest.reason || '部分休息';
-            detail.classList.remove('hidden');
-            if (detailText) detailText.textContent = `${rest.start} - ${rest.end}`;
-        }
-        const srEl = document.getElementById('status-rest');
-        if (srEl) srEl.textContent = '是';
-    } else {
+    if (entries.length === 0) {
         statusText.textContent = '正常上班';
         detail.classList.add('hidden');
         const srEl = document.getElementById('status-rest');
         if (srEl) srEl.textContent = '否';
+        return;
     }
+
+    // 全天休息优先显示
+    const fullRest = entries.find(e => e.type === 'full');
+    if (fullRest) {
+        statusText.textContent = fullRest.reason || '全天休息';
+        detail.classList.remove('hidden');
+        if (detailText) detailText.textContent = '全天休息';
+    } else {
+        // 显示第一个时段
+        const firstPeriod = entries.find(e => e.type === 'period');
+        if (firstPeriod) {
+            statusText.textContent = firstPeriod.reason || '部分休息';
+            detail.classList.remove('hidden');
+            if (detailText) detailText.textContent = `${firstPeriod.start} - ${firstPeriod.end}`;
+        } else {
+            statusText.textContent = '休息';
+            detail.classList.remove('hidden');
+            if (detailText) detailText.textContent = '';
+        }
+    }
+    const srEl = document.getElementById('status-rest');
+    if (srEl) srEl.textContent = '是';
 }
 
 function renderRestRecords() {
     const rest = loadData(STORAGE_KEYS.REST);
     const container = document.getElementById('rest-records');
-    const entries = Object.entries(rest).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 10);
+    // rest = { "2026-04-07": [...], "2026-04-08": [...] }
+    const entries = Object.entries(rest)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .slice(0, 10);
 
-    if (entries.length === 0) {
+    if (entries.length === 0 || entries.every(([, arr]) => !arr || arr.length === 0)) {
         container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">暂无记录</p>';
         return;
     }
 
-    container.innerHTML = entries.map(([date, r]) => {
-        const dateStr = new Date(date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-        const label = r.type === 'full' ? `全天: ${r.reason}` : `${r.start}-${r.end}: ${r.reason}`;
-        return `
-            <div class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2.5 text-sm">
-                <span class="text-gray-500 text-xs">${dateStr}</span>
-                <span class="font-medium text-gray-800">${label}</span>
-            </div>
-        `;
+    container.innerHTML = entries.flatMap(([date, arr]) => {
+        if (!arr || arr.length === 0) return [];
+        return arr.map(r => {
+            const dateStr = new Date(date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+            const label = r.type === 'full' ? `全天: ${r.reason}` : `${r.start}-${r.end}: ${r.reason}`;
+            return `
+                <div class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2.5 text-sm">
+                    <span class="text-gray-500 text-xs">${dateStr}</span>
+                    <span class="font-medium text-gray-800">${label}</span>
+                </div>
+            `;
+        });
     }).join('');
 }
 
